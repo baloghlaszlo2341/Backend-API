@@ -5,7 +5,6 @@ const cors = require('cors');
 const app = express();
 const port = process.env.PORT;
 const ShortCrypt = require('short-crypt');
-// MIDDLEWARE FUNCION
 app.use(express.urlencoded({extended: true}));
 app.use(cors());
 app.use(express.json());
@@ -18,12 +17,10 @@ var pool  = mysql.createPool({
     database        : process.env.DBNAME
   });
 var secret = process.env.DBPASS;
-var shortcrypt = new Shortcrypt(secret);
-// ENDPOINTS
+var shortcrypt = new Shortcrypt(secret)
 
-// logincheck
 // A tábla az alábbi mezőket tartalmazza: ID, nev, zarodolgozatcim, rovidleiras, leadasidatum, konzulensnev, ertekeles
-app.post('/logincheck', (req, res)=>{
+app.post('/zarodolgozat', (req, res)=>{
 
   let table = 'ID';
   let field1 = 'nev';
@@ -35,24 +32,22 @@ app.post('/logincheck', (req, res)=>{
   let value1 = req.body.email;
   let value2 = req.body.passwd;
 
-  pool.query(`SELECT * FROM ${table} WHERE ${field1}='${value1}' AND ${field2}='${value2}'`, (err, results)=>{
-    sendResults(table, err, results, req, res, 'logincheck from');
-  });
+
 });
 
 app.get('/', function (req, res) {
   res.send('Node JS backend');
 });
 
-// GET all records
+// Get every record.
 app.get('/:table', (req, res) => {
-  let table = ShortCrypt.Decrypted(req.params.table);
+  let table = req.params.table;
     pool.query(`SELECT * FROM ${table}`, (err, results) => {
       sendResults(table, err, results, req, res, 'sent from');
     });
 });
 
-// GET one record by ID
+//Get a reord by id..
 app.get('/:table/:id', (req, res) => {
   let table = req.params.table;
   let id = req.params.id;
@@ -62,7 +57,7 @@ app.get('/:table/:id', (req, res) => {
   });
 });
 
-// GET records by field  
+//Get the records byy it's field name 
 app.get('/:table/:field/:op/:value', (req, res)=>{
   let table = req.params.table;
   let field = req.params.field;
@@ -78,9 +73,9 @@ app.get('/:table/:field/:op/:value', (req, res)=>{
   });
 });
 
-// POST new record to table
+//Add a new record
 app.post('/:table', (req, res)=>{
-  let table =  ShortCrypt.Encrypted(req.params.table);
+  let table = req.params.table;
 
   let valued = '"'+ Object.values(req.body).join('","') +'"';
   let values = ShortCrypt.Encrypted(valued);
@@ -91,11 +86,11 @@ app.post('/:table', (req, res)=>{
   });
 });
 
-// PATCH record in table by field (update)
+//Updating
 app.patch('/:table/:field/:op/:value', (req, res) => {
   let table = req.params.table;
   let field = req.params.field;
-  let value = req.params.value;
+  let value = ShortCrypt.Encrypted(req.params.value);
   let op = getOperator(req.params.op);
 
   if (op == ' like '){
@@ -119,7 +114,7 @@ app.patch('/:table/:field/:op/:value', (req, res) => {
 
 });
 
-// DELETE one record by ID
+// Deleting a recrd by it's id.
 app.delete('/:table/:id', (req, res) => {
   let table = req.params.table;
   let id = req.params.id;
@@ -129,11 +124,11 @@ app.delete('/:table/:id', (req, res) => {
   });
 });
 
-// DELETE record from table by field
+// Delete a record from table by it's field name.
 app.delete('/:table/:field/:op/:value', (req, res) => {
   let table = req.params.table;
   let field = req.params.field;
-  let value = req.params.value;
+  let value =ShortCrypt.Decrypted(req.params.value);
   let op = getOperator(req.params.op);
 
   if (op == ' like '){
@@ -145,7 +140,7 @@ app.delete('/:table/:field/:op/:value', (req, res) => {
   }); 
 });
 
-// DELETE all records from table
+// Every single record will be deleted.
 app.delete('/:table', (req, res) => {
   let table = req.params.table;
   pool.query(`DELETE FROM ${table}`, (err, results) => {
@@ -153,7 +148,7 @@ app.delete('/:table', (req, res) => {
   }); 
 });
 
-// send results to the client
+//Send the records.
 function sendResults(table, err, results, req, res, msg){
   if (err){
     console.log(req.socket.remoteAddress + ' >> ' + err.sqlMessage);
@@ -164,7 +159,7 @@ function sendResults(table, err, results, req, res, msg){
   }
 }
 
-// change operator value
+// Change the oprerator.
 function getOperator(op){
   switch(op){
     case 'eq': {op = '='; break}
